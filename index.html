@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SubTracker ✦</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0f;
+      --surface: #15151a;
+      --surface2: #1c1c24;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --text: #f0ede8;
+      --muted: #7a7880;
+      --accent: #c9a96e;
+      --accent2: #e8c88a;
+      --pink: #e87fa0;
+      --teal: #5ecbba;
+      --purple: #a78bfa;
+      --red: #f87171;
+      --green: #4ade80;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background grain */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+    /* Header */
+    header {
+      padding: 40px 0 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .header-inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--pink));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 28px;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+    h1 span { color: var(--accent); font-style: italic; }
+    .header-date { font-size: 13px; color: var(--muted); }
+
+    /* Stats row */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      padding: 28px 0;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px 20px;
+      transition: border-color 0.2s;
+    }
+    .stat-card:hover { border-color: var(--border2); }
+    .stat-label { font-size: 11px; font-weight: 500; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 8px; }
+    .stat-value { font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text); line-height: 1; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.pink { color: var(--pink); }
+    .stat-value.teal { color: var(--teal); }
+    .stat-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.18s;
+    }
+    .filter-btn:hover { border-color: var(--border2); color: var(--text); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #0d0d0f; font-weight: 600; }
+    .spacer { flex: 1; }
+    .add-btn {
+      padding: 9px 20px;
+      background: var(--accent);
+      color: #0d0d0f;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 7px;
+      transition: background 0.18s, transform 0.1s;
+    }
+    .add-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+    .add-btn:active { transform: translateY(0); }
+
+    /* Grid */
+    .subs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+      margin-bottom: 40px;
+    }
+
+    .sub-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      position: relative;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    .sub-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .sub-card-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+    .sub-icon {
+      width: 42px; height: 42px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+    .card-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 28px; height: 28px;
+      border-radius: 7px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover.delete { border-color: var(--red); color: var(--red); background: rgba(248,113,113,0.1); }
+    .icon-btn:hover.edit { border-color: var(--accent); color: var(--accent); }
+
+    .sub-name { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
+    .sub-category {
+      display: inline-block;
+      font-size: 10px; font-weight: 600;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      padding: 2px 8px; border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .cat-streaming { background: rgba(201,169,110,0.15); color: var(--accent); }
+    .cat-productivity { background: rgba(94,203,186,0.15); color: var(--teal); }
+    .cat-music { background: rgba(232,127,160,0.15); color: var(--pink); }
+    .cat-software { background: rgba(167,139,250,0.15); color: var(--purple); }
+    .cat-other { background: rgba(122,120,128,0.15); color: var(--muted); }
+
+    .sub-bottom { display: flex; align-items: flex-end; justify-content: space-between; }
+    .sub-price { font-family: 'DM Serif Display', serif; font-size: 24px; color: var(--text); line-height: 1; }
+    .sub-price span { font-family: 'DM Sans', sans-serif; font-size: 13px; color: var(--muted); font-weight: 400; }
+    .sub-billing { text-align: right; }
+    .billing-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+    .billing-date { font-size: 12px; color: var(--text); margin-top: 2px; }
+    .billing-date.soon { color: var(--pink); }
+    .billing-date.today { color: var(--red); font-weight: 600; }
+
+    /* Due soon strip */
+    .due-strip {
+      background: linear-gradient(135deg, rgba(232,127,160,0.08), rgba(201,169,110,0.08));
+      border: 1px solid rgba(232,127,160,0.2);
+      border-radius: 12px;
+      padding: 14px 18px;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 13px; color: var(--muted);
+    }
+    .due-strip strong { color: var(--pink); }
+    .due-strip-icon { font-size: 16px; }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      display: none;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .empty h3 { font-family: 'DM Serif Display', serif; font-size: 20px; color: var(--text); margin-bottom: 6px; }
+    .empty p { font-size: 14px; }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(6px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 20px;
+      padding: 32px;
+      width: 100%; max-width: 440px;
+      transform: translateY(16px);
+      transition: transform 0.25s;
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal h2 { font-family: 'DM Serif Display', serif; font-size: 22px; margin-bottom: 24px; }
+    .modal h2 span { color: var(--accent); font-style: italic; }
+
+    .form-row { margin-bottom: 16px; }
+    .form-row label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 7px; }
+    .form-row input, .form-row select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border2);
+      border-radius: 10px;
+      padding: 11px 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    .form-row input:focus, .form-row select:focus { border-color: var(--accent); }
+    .form-row select option { background: #1c1c24; }
+    .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 24px; }
+    .btn-cancel {
+      flex: 1; padding: 11px;
+      background: transparent; border: 1px solid var(--border2);
+      border-radius: 10px; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 14px;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-cancel:hover { color: var(--text); border-color: var(--border2); }
+    .btn-save {
+      flex: 2; padding: 11px;
+      background: var(--accent); border: none;
+      border-radius: 10px; color: #0d0d0f;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-save:hover { background: var(--accent2); }
+
+    /* Reminder banner */
+    .reminder-banner {
+      position: fixed; bottom: 24px; right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border2);
+      border-radius: 14px;
+      padding: 16px 20px;
+      max-width: 300px;
+      z-index: 200;
+      transform: translateY(120px);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    }
+    .reminder-banner.show { transform: translateY(0); }
+    .reminder-banner-title { font-size: 13px; font-weight: 600; color: var(--pink); margin-bottom: 4px; }
+    .reminder-banner-msg { font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .reminder-close {
+      position: absolute; top: 10px; right: 12px;
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 16px;
+    }
+
+    footer { border-top: 1px solid var(--border); padding: 24px 0; text-align: center; font-size: 12px; color: var(--muted); }
+    footer span { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-mark">✦</div>
+        <h1>Sub<span>Tracker</span></h1>
+      </div>
+      <div class="header-date" id="header-date"></div>
+    </div>
+  </header>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Monthly Total</div>
+      <div class="stat-value accent" id="stat-monthly">₹0</div>
+      <div class="stat-sub">per month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Yearly Total</div>
+      <div class="stat-value pink" id="stat-yearly">₹0</div>
+      <div class="stat-sub">per year</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Active Subs</div>
+      <div class="stat-value teal" id="stat-count">0</div>
+      <div class="stat-sub">subscriptions</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Due This Week</div>
+      <div class="stat-value" id="stat-due">0</div>
+      <div class="stat-sub">renewals coming up</div>
+    </div>
+  </div>
+
+  <!-- Due soon strip -->
+  <div class="due-strip" id="due-strip" style="display:none">
+    <span class="due-strip-icon">🔔</span>
+    <div id="due-strip-msg"></div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="filter-btn active" onclick="setFilter('all')">All</button>
+    <button class="filter-btn" onclick="setFilter('streaming')">Streaming</button>
+    <button class="filter-btn" onclick="setFilter('music')">Music</button>
+    <button class="filter-btn" onclick="setFilter('productivity')">Productivity</button>
+    <button class="filter-btn" onclick="setFilter('software')">Software</button>
+    <button class="filter-btn" onclick="setFilter('other')">Other</button>
+    <div class="spacer"></div>
+    <button class="add-btn" onclick="openModal()">＋ Add Subscription</button>
+  </div>
+
+  <!-- Grid -->
+  <div class="subs-grid" id="subs-grid"></div>
+  <div class="empty" id="empty-state">
+    <div class="empty-icon">🌸</div>
+    <h3>No subscriptions yet</h3>
+    <p>Add your first subscription to start tracking</p>
+  </div>
+
+  <footer><span>SubTracker</span> — built with plain JS ✦</footer>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2 id="modal-title">Add <span>Subscription</span></h2>
+    <div class="form-row">
+      <label>Service Name</label>
+      <input type="text" id="f-name" placeholder="e.g. Netflix, Spotify…" />
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0">
+        <label>Amount (₹)</label>
+        <input type="number" id="f-price" placeholder="649" min="0" />
+      </div>
+      <div class="form-row" style="margin:0">
+        <label>Cycle</label>
+        <select id="f-cycle">
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div class="form-row" style="margin:0">
+        <label>Category</label>
+        <select id="f-category">
+          <option value="streaming">Streaming</option>
+          <option value="music">Music</option>
+          <option value="productivity">Productivity</option>
+          <option value="software">Software</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-row" style="margin:0">
+        <label>Emoji Icon</label>
+        <input type="text" id="f-icon" placeholder="🎬" maxlength="2" />
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Next Billing Date</label>
+      <input type="date" id="f-date" />
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveSub()">Save Subscription</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reminder Banner -->
+<div class="reminder-banner" id="reminder-banner">
+  <button class="reminder-close" onclick="closeReminder()">×</button>
+  <div class="reminder-banner-title">🔔 Renewal Reminder</div>
+  <div class="reminder-banner-msg" id="reminder-msg"></div>
+</div>
+
+<script>
+  // ── Data ──────────────────────────────────────────────
+  const DEFAULT_SUBS = [
+    { id: 1, name: 'Netflix', price: 649, cycle: 'monthly', category: 'streaming', icon: '🎬', date: daysFromNow(3) },
+    { id: 2, name: 'Spotify', price: 119, cycle: 'monthly', category: 'music', icon: '🎵', date: daysFromNow(12) },
+    { id: 3, name: 'ChatGPT Plus', price: 1700, cycle: 'monthly', category: 'productivity', icon: '🤖', date: daysFromNow(1) },
+    { id: 4, name: 'iCloud+', price: 75, cycle: 'monthly', category: 'software', icon: '☁️', date: daysFromNow(20) },
+    { id: 5, name: 'GitHub Copilot', price: 833, cycle: 'monthly', category: 'software', icon: '💻', date: daysFromNow(7) },
+  ];
+
+  function daysFromNow(n) {
+    const d = new Date(); d.setDate(d.getDate() + n);
+    return d.toISOString().split('T')[0];
+  }
+
+  let subs = JSON.parse(localStorage.getItem('subtracker_subs') || 'null') || DEFAULT_SUBS;
+  let editingId = null;
+  let currentFilter = 'all';
+
+  function save() { localStorage.setItem('subtracker_subs', JSON.stringify(subs)); }
+
+  // ── Helpers ──────────────────────────────────────────
+  function toMonthly(price, cycle) {
+    if (cycle === 'yearly') return price / 12;
+    if (cycle === 'weekly') return price * 4.33;
+    return price;
+  }
+
+  function daysUntil(dateStr) {
+    const today = new Date(); today.setHours(0,0,0,0);
+    const d = new Date(dateStr); d.setHours(0,0,0,0);
+    return Math.round((d - today) / 86400000);
+  }
+
+  function fmt(n) { return '₹' + Math.round(n).toLocaleString('en-IN'); }
+
+  function catClass(cat) { return 'cat-' + cat; }
+
+  function billingClass(dateStr) {
+    const d = daysUntil(dateStr);
+    if (d <= 0) return 'today';
+    if (d <= 3) return 'soon';
+    return '';
+  }
+
+  function billingLabel(dateStr) {
+    const d = daysUntil(dateStr);
+    if (d < 0) return 'Overdue';
+    if (d === 0) return 'Due today!';
+    if (d === 1) return 'Due tomorrow';
+    if (d <= 7) return `Due in ${d} days`;
+    return new Date(dateStr).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+  }
+
+  // ── Render ────────────────────────────────────────────
+  function render() {
+    const filtered = currentFilter === 'all' ? subs : subs.filter(s => s.category === currentFilter);
+    const grid = document.getElementById('subs-grid');
+    const empty = document.getElementById('empty-state');
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '';
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      grid.innerHTML = filtered.map(s => `
+        <div class="sub-card">
+          <div class="sub-card-top">
+            <div class="sub-icon" style="background:rgba(255,255,255,0.05)">${s.icon || '📦'}</div>
+            <div class="card-actions">
+              <button class="icon-btn edit" onclick="editSub(${s.id})" title="Edit">✎</button>
+              <button class="icon-btn delete" onclick="deleteSub(${s.id})" title="Delete">✕</button>
+            </div>
+          </div>
+          <div class="sub-name">${s.name}</div>
+          <div class="sub-category ${catClass(s.category)}">${s.category}</div>
+          <div class="sub-bottom">
+            <div class="sub-price">${fmt(s.price)} <span>/ ${s.cycle}</span></div>
+            <div class="sub-billing">
+              <div class="billing-label">Next billing</div>
+              <div class="billing-date ${billingClass(s.date)}">${billingLabel(s.date)}</div>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    updateStats();
+    updateDueStrip();
+  }
+
+  function updateStats() {
+    const monthly = subs.reduce((a, s) => a + toMonthly(s.price, s.cycle), 0);
+    const dueCount = subs.filter(s => daysUntil(s.date) <= 7 && daysUntil(s.date) >= 0).length;
+    document.getElementById('stat-monthly').textContent = fmt(monthly);
+    document.getElementById('stat-yearly').textContent = fmt(monthly * 12);
+    document.getElementById('stat-count').textContent = subs.length;
+    document.getElementById('stat-due').textContent = dueCount;
+  }
+
+  function updateDueStrip() {
+    const strip = document.getElementById('due-strip');
+    const dueSoon = subs.filter(s => daysUntil(s.date) >= 0 && daysUntil(s.date) <= 3);
+    if (dueSoon.length === 0) { strip.style.display = 'none'; return; }
+    strip.style.display = 'flex';
+    const names = dueSoon.map(s => `<strong>${s.name}</strong>`).join(', ');
+    document.getElementById('due-strip-msg').innerHTML = `${names} ${dueSoon.length > 1 ? 'are' : 'is'} renewing within 3 days — heads up!`;
+  }
+
+  // ── Filter ────────────────────────────────────────────
+  function setFilter(f) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    render();
+  }
+
+  // ── Modal ─────────────────────────────────────────────
+  function openModal(sub = null) {
+    editingId = sub ? sub.id : null;
+    document.getElementById('modal-title').innerHTML = sub ? 'Edit <span>Subscription</span>' : 'Add <span>Subscription</span>';
+    document.getElementById('f-name').value = sub?.name || '';
+    document.getElementById('f-price').value = sub?.price || '';
+    document.getElementById('f-cycle').value = sub?.cycle || 'monthly';
+    document.getElementById('f-category').value = sub?.category || 'streaming';
+    document.getElementById('f-icon').value = sub?.icon || '';
+    document.getElementById('f-date').value = sub?.date || daysFromNow(30);
+    document.getElementById('modal-overlay').classList.add('open');
+  }
+
+  function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+
+  function closeModalOutside(e) { if (e.target === document.getElementById('modal-overlay')) closeModal(); }
+
+  function editSub(id) { openModal(subs.find(s => s.id === id)); }
+
+  function saveSub() {
+    const name = document.getElementById('f-name').value.trim();
+    const price = parseFloat(document.getElementById('f-price').value);
+    if (!name || isNaN(price) || price < 0) {
+      alert('Please fill in a valid name and price.');
+      return;
+    }
+    const sub = {
+      id: editingId || Date.now(),
+      name,
+      price,
+      cycle: document.getElementById('f-cycle').value,
+      category: document.getElementById('f-category').value,
+      icon: document.getElementById('f-icon').value || '📦',
+      date: document.getElementById('f-date').value || daysFromNow(30),
+    };
+    if (editingId) {
+      subs = subs.map(s => s.id === editingId ? sub : s);
+    } else {
+      subs.push(sub);
+    }
+    save(); closeModal(); render();
+  }
+
+  function deleteSub(id) {
+    const s = subs.find(s => s.id === id);
+    if (confirm(`Remove ${s.name}?`)) {
+      subs = subs.filter(s => s.id !== id);
+      save(); render();
+    }
+  }
+
+  // ── Reminder notification ─────────────────────────────
+  function showReminder() {
+    const today = subs.filter(s => daysUntil(s.date) === 0);
+    const tmrw  = subs.filter(s => daysUntil(s.date) === 1);
+    if (today.length === 0 && tmrw.length === 0) return;
+    let msg = '';
+    if (today.length) msg += `${today.map(s=>s.name).join(', ')} renew today. `;
+    if (tmrw.length)  msg += `${tmrw.map(s=>s.name).join(', ')} renew tomorrow.`;
+    document.getElementById('reminder-msg').textContent = msg;
+    setTimeout(() => document.getElementById('reminder-banner').classList.add('show'), 1000);
+    setTimeout(() => closeReminder(), 6000);
+  }
+
+  function closeReminder() { document.getElementById('reminder-banner').classList.remove('show'); }
+
+  // ── Header date ───────────────────────────────────────
+  document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  // ── Init ──────────────────────────────────────────────
+  render();
+  showReminder();
+</script>
+</body>
+</html>
