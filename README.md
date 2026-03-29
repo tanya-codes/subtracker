@@ -1,5 +1,6 @@
 # subtracker
 Track your subscriptions, monitor monthly costs &amp; get billing reminders — built with vanilla JS, no frameworks.
+check it out here-https://tanya-codes.github.io/subtracker/
 # ✦ SubTracker
 
 > Track your subscriptions, monitor monthly costs & get billing reminders.
