@@ -53,12 +53,27 @@
     .header-inner { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
     .logo { display: flex; align-items: center; gap: 12px; }
     .logo-mark {
-      width: 40px; height: 40px;
-      background: linear-gradient(135deg, var(--accent), var(--pink));
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      width: 44px; height: 44px;
+      flex-shrink: 0;
+      cursor: pointer;
     }
+    .logo-mark:hover .coin-body { filter: brightness(1.15); }
+    @keyframes float-arrow {
+      0%, 100% { transform: translateY(0px); opacity: 1; }
+      50% { transform: translateY(-4px); opacity: 0.7; }
+    }
+    @keyframes coin-shine {
+      0%, 100% { opacity: 0; }
+      50% { opacity: 1; }
+    }
+    @keyframes ring-pulse {
+      0% { transform: scale(1); opacity: 0.5; }
+      70% { transform: scale(1.35); opacity: 0; }
+      100% { transform: scale(1.35); opacity: 0; }
+    }
+    .arrow-up { animation: float-arrow 2s ease-in-out infinite; transform-origin: center; }
+    .coin-shine { animation: coin-shine 3s ease-in-out infinite; }
+    .ring-pulse { animation: ring-pulse 2.5s ease-out infinite; transform-origin: center; }
     h1 {
       font-family: 'DM Serif Display', serif;
       font-size: 28px;
@@ -311,7 +326,40 @@
   <header>
     <div class="header-inner">
       <div class="logo">
-        <div class="logo-mark">✦</div>
+        <div class="logo-mark">
+          <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" width="44" height="44">
+            <defs>
+              <radialGradient id="coinGrad" cx="40%" cy="35%" r="60%">
+                <stop offset="0%" stop-color="#e8c88a"/>
+                <stop offset="60%" stop-color="#c9a96e"/>
+                <stop offset="100%" stop-color="#a07840"/>
+              </radialGradient>
+              <radialGradient id="coinFace" cx="38%" cy="32%" r="55%">
+                <stop offset="0%" stop-color="#f0d898"/>
+                <stop offset="100%" stop-color="#b8883a"/>
+              </radialGradient>
+            </defs>
+            <!-- Pulse ring behind coin -->
+            <circle class="ring-pulse" cx="22" cy="26" r="14" fill="none" stroke="#c9a96e" stroke-width="1.5"/>
+            <!-- Coin body (ellipse = 3D coin viewed at angle) -->
+            <ellipse class="coin-body" cx="22" cy="27" rx="14" ry="9" fill="url(#coinGrad)"/>
+            <!-- Coin top face -->
+            <ellipse cx="22" cy="23" rx="14" ry="9" fill="url(#coinFace)"/>
+            <!-- Coin edge (3D thickness) -->
+            <path d="M8 23 Q8 27 22 31 Q36 27 36 23" fill="#a07840"/>
+            <!-- Coin rim highlight -->
+            <ellipse cx="22" cy="23" rx="14" ry="9" fill="none" stroke="#f0d898" stroke-width="0.8" opacity="0.6"/>
+            <!-- ₹ symbol on coin -->
+            <text x="22" y="27" text-anchor="middle" dominant-baseline="central" font-family="Georgia, serif" font-size="9" font-weight="bold" fill="#7a5420" opacity="0.85">₹</text>
+            <!-- Shine glint -->
+            <ellipse class="coin-shine" cx="16" cy="20" rx="3" ry="1.5" fill="white" opacity="0.35" transform="rotate(-30 16 20)"/>
+            <!-- Upward arrow (saving = going up) -->
+            <g class="arrow-up">
+              <line x1="22" y1="14" x2="22" y2="5" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round"/>
+              <polyline points="18,9 22,4.5 26,9" fill="none" stroke="#4ade80" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+          </svg>
+        </div>
         <h1>Sub<span>Tracker</span></h1>
       </div>
       <div class="header-date" id="header-date"></div>
@@ -368,7 +416,8 @@
     <p>Add your first subscription to start tracking</p>
   </div>
 
-  <footer><span>SubTracker</span> ✦</footer>
+  <footer><span>SubTracker</span> 
+    -Your money isn't just sitting there — it's actively growing because you're tracking it smart.</footer>
 </div>
 
 <!-- Add/Edit Modal -->
